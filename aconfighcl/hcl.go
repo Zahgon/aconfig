@@ -2,8 +2,6 @@ package aconfighcl
 
 import (
 	"io/fs"
-
-	"github.com/hashicorp/hcl"
 )
 
 // Decoder of HCL files for aconfig.
@@ -12,33 +10,24 @@ type Decoder struct {
 }
 
 // New HCL decoder for aconfig.
-func New() *Decoder { return &Decoder{} }
+func New() *Decoder {
+	_ = "STUB: not implemented"
 
-// Format of the decoder.
+	// Format of the decoder.
+	return nil
+}
+
 func (d *Decoder) Format() string {
-	return "hcl"
+	_ = "STUB: not implemented"
+
+	// DecodeFile implements aconfig.FileDecoder.
+	return ""
 }
 
-// DecodeFile implements aconfig.FileDecoder.
 func (d *Decoder) DecodeFile(filename string) (map[string]interface{}, error) {
-	b, err := fs.ReadFile(d.fsys, filename)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := hcl.ParseBytes(b)
-	if err != nil {
-		return nil, err
-	}
-
-	var raw map[string]interface{}
-	if err := hcl.DecodeObject(&raw, f); err != nil {
-		return nil, err
-	}
-	return raw, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // DecodeFile implements aconfig.FileDecoder.
-func (d *Decoder) Init(fsys fs.FS) {
-	d.fsys = fsys
-}
+func (d *Decoder) Init(fsys fs.FS) { _ = "STUB: not implemented"; return }

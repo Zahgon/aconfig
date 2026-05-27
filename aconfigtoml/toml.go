@@ -2,8 +2,6 @@ package aconfigtoml
 
 import (
 	"io/fs"
-
-	"github.com/BurntSushi/toml"
 )
 
 // Decoder of TOML files for aconfig.
@@ -12,29 +10,24 @@ type Decoder struct {
 }
 
 // New TOML decoder for aconfig.
-func New() *Decoder { return &Decoder{} }
+func New() *Decoder {
+	_ = "STUB: not implemented"
 
-// Format of the decoder.
+	// Format of the decoder.
+	return nil
+}
+
 func (d *Decoder) Format() string {
-	return "toml"
+	_ = "STUB: not implemented"
+
+	// DecodeFile implements aconfig.FileDecoder.
+	return ""
 }
 
-// DecodeFile implements aconfig.FileDecoder.
 func (d *Decoder) DecodeFile(filename string) (map[string]interface{}, error) {
-	f, err := d.fsys.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var raw map[string]interface{}
-	if _, err := toml.DecodeReader(f, &raw); err != nil {
-		return nil, err
-	}
-	return raw, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // DecodeFile implements aconfig.FileDecoder.
-func (d *Decoder) Init(fsys fs.FS) {
-	d.fsys = fsys
-}
+func (d *Decoder) Init(fsys fs.FS) { _ = "STUB: not implemented"; return }

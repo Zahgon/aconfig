@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
 // Loader of user configuration.
@@ -125,16 +123,7 @@ type Field interface {
 
 // LoaderFor creates a new Loader based on a given configuration structure.
 // Supports only non-nil structures.
-func LoaderFor(dst any, cfg Config) *Loader {
-	assertStruct(dst)
-
-	l := &Loader{
-		dst:    dst,
-		config: cfg,
-	}
-	l.init()
-	return l
-}
+func LoaderFor(dst any, cfg Config) *Loader { _ = "STUB: not implemented"; return nil }
 
 func (l *Loader) init() {
 	l.config.envDelimiter = "_"
@@ -217,305 +206,54 @@ func (l *Loader) init() {
 // Flags returngs flag.FlagSet to create your own flags.
 // FlagSet name is Config.FlagPrefix and error handling is set to ContinueOnError.
 func (l *Loader) Flags() *flag.FlagSet {
-	return l.flagSet
+	_ = "STUB: not implemented"
+
+	// WalkFields iterates over configuration fields.
+	// Easy way to create documentation or user-friendly help.
+	return nil
 }
 
-// WalkFields iterates over configuration fields.
-// Easy way to create documentation or user-friendly help.
-func (l *Loader) WalkFields(fn func(f Field) bool) {
-	for _, f := range l.fields {
-		if !fn(f) {
-			return
-		}
-	}
-}
+func (l *Loader) WalkFields(fn func(f Field) bool) { _ = "STUB: not implemented"; return }
 
 // Load configuration into a given param.
-func (l *Loader) Load() error {
-	if l.errInit != nil {
-		return fmt.Errorf("init loader: %w", l.errInit)
-	}
-	if err := l.loadConfig(); err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
-	return nil
-}
+func (l *Loader) Load() error { _ = "STUB: not implemented"; return nil }
 
-func (l *Loader) loadConfig() error {
-	if err := l.parseFlags(); err != nil {
-		return err
-	}
-	if err := l.loadSources(); err != nil {
-		return err
-	}
-	if err := l.checkRequired(); err != nil {
-		return err
-	}
-	return nil
-}
+func (l *Loader) loadConfig() error { _ = "STUB: not implemented"; return nil }
 
 func (l *Loader) parseFlags() error {
+	_ = "STUB: not implemented"
 	// TODO: too simple?
-	if l.flagSet.Parsed() || l.config.SkipFlags {
-		return nil
-	}
-	return l.flagSet.Parse(l.config.Args)
-}
-
-func (l *Loader) loadSources() error {
-	if !l.config.SkipDefaults {
-		if err := l.loadDefaults(); err != nil {
-			return fmt.Errorf("load defaults: %w", err)
-		}
-	}
-	if !l.config.SkipFiles {
-		if err := l.loadFiles(); err != nil {
-			return fmt.Errorf("load files: %w", err)
-		}
-	}
-	if !l.config.SkipEnv {
-		if err := l.loadEnvironment(); err != nil {
-			return fmt.Errorf("load environment: %w", err)
-		}
-	}
-	if !l.config.SkipFlags {
-		if err := l.loadFlags(); err != nil {
-			return fmt.Errorf("load flags: %w", err)
-		}
-	}
-
-	if l.config.NewParser {
-		if err := l.parser.apply(l.dst); err != nil {
-			return fmt.Errorf("apply: %w", err)
-		}
-	}
 	return nil
 }
 
-func (l *Loader) checkRequired() error {
-	missedFields := []string{}
-	for _, field := range l.fields {
-		if field.isSet {
-			continue
-		}
-		if field.isRequired || l.config.AllFieldRequired {
-			missedFields = append(missedFields, field.name)
-		}
-	}
+func (l *Loader) loadSources() error { _ = "STUB: not implemented"; return nil }
 
-	if len(missedFields) == 0 {
-		return nil
-	}
-	return fmt.Errorf("fields required but not set: %s", strings.Join(missedFields, ","))
-}
+func (l *Loader) checkRequired() error { _ = "STUB: not implemented"; return nil }
 
-func (l *Loader) loadDefaults() error {
-	if l.config.NewParser {
-		return nil
-	}
+func (l *Loader) loadDefaults() error { _ = "STUB: not implemented"; return nil }
 
-	for _, field := range l.fields {
-		defaultValue := field.Tag("default")
-		if err := l.setFieldData(field, defaultValue); err != nil {
-			return err
-		}
-		field.isSet = (defaultValue != "")
-	}
-	return nil
-}
+func (l *Loader) loadFiles() error { _ = "STUB: not implemented"; return nil }
 
-func (l *Loader) loadFiles() error {
-	if l.config.FileFlag != "" {
-		if err := l.loadFileFlag(); err != nil {
-			return err
-		}
-	}
+func (l *Loader) loadFile(file string) error { _ = "STUB: not implemented"; return nil }
 
-	for _, file := range l.config.Files {
-		if _, err := fs.Stat(l.fsys, file); os.IsNotExist(err) {
-			if l.config.FailOnFileNotFound {
-				return err
-			}
-			continue
-		}
+func (l *Loader) loadFileFlag() error { _ = "STUB: not implemented"; return nil }
 
-		if err := l.loadFile(file); err != nil {
-			return err
-		}
-
-		if !l.config.MergeFiles {
-			break
-		}
-	}
-	return nil
-}
-
-func (l *Loader) loadFile(file string) error {
-	ext := strings.ToLower(filepath.Ext(file))
-	decoder, ok := l.config.FileDecoders[ext]
-	if !ok {
-		return fmt.Errorf("file format %q is not supported", ext)
-	}
-
-	actualFields, err := decoder.DecodeFile(file)
-	if err != nil {
-		return err
-	}
-
-	tag := decoder.Format()
-
-	if l.config.NewParser {
-		if err := l.parser.applyLevel(tag, actualFields); err != nil {
-			return fmt.Errorf("apply %s: %w", tag, err)
-		}
-		return nil
-	}
-
-	for _, field := range l.fields {
-		name := l.fullTag("", field, tag)
-		if name == "" {
-			continue
-		}
-		value, ok := actualFields[name]
-		if !ok {
-			actualFields = find(actualFields, name)
-			value, ok = actualFields[name]
-			if !ok {
-				continue
-			}
-		}
-
-		if err := l.setFieldData(field, value); err != nil {
-			return err
-		}
-		field.isSet = true
-		delete(actualFields, name)
-	}
-
-	if !l.config.AllowUnknownFields {
-		for env := range actualFields {
-			return fmt.Errorf("unknown field in file %q: %s (see AllowUnknownFields config param)", file, env)
-		}
-	}
-	return nil
-}
-
-func (l *Loader) loadFileFlag() error {
-	fileFlag := getActualFlag(l.config.FileFlag, l.flagSet)
-	if fileFlag == nil {
-		return nil
-	}
-
-	configFile := fileFlag.Value.String()
-	if configFile == "" {
-		return fmt.Errorf("%s should not be empty", l.config.FileFlag)
-	}
-
-	if l.config.MergeFiles {
-		l.config.Files = append(l.config.Files, configFile)
-	} else {
-		l.config.Files = []string{configFile}
-	}
-	return nil
-}
-
-func (l *Loader) loadEnvironment() error {
-	actualEnvs := getEnv(l.config.Envs)
-	dupls := make(map[string]struct{})
-
-	if l.config.NewParser {
-		if err := l.parser.applyFlat("env", actualEnvs); err != nil {
-			return fmt.Errorf("apply env: %w", err)
-		}
-		return nil
-	}
-
-	for _, field := range l.fields {
-		envName := l.fullTag(l.config.EnvPrefix, field, "env")
-		if envName == "" {
-			continue
-		}
-		if err := l.setField(field, envName, actualEnvs, dupls); err != nil {
-			return err
-		}
-	}
-	return l.postEnvCheck(actualEnvs, dupls)
-}
+func (l *Loader) loadEnvironment() error { _ = "STUB: not implemented"; return nil }
 
 func (l *Loader) postEnvCheck(values map[string]any, dupls map[string]struct{}) error {
-	if l.config.AllowUnknownEnvs || l.config.EnvPrefix == "" {
-		return nil
-	}
-	for name := range dupls {
-		delete(values, name)
-	}
-	for env := range values {
-		if strings.HasPrefix(env, l.config.EnvPrefix) {
-			return fmt.Errorf("unknown environment var %s (see AllowUnknownEnvs config param)", env)
-		}
-	}
+	_ = "STUB: not implemented"
 	return nil
 }
 
-func (l *Loader) loadFlags() error {
-	actualFlags := getFlags(l.flagSet)
-	dupls := make(map[string]struct{})
-
-	if l.config.NewParser {
-		if err := l.parser.applyFlat("flag", actualFlags); err != nil {
-			return fmt.Errorf("apply flag: %w", err)
-		}
-		return nil
-	}
-
-	for _, field := range l.fields {
-		flagName := l.fullTag(l.config.FlagPrefix, field, "flag")
-		if flagName == "" {
-			continue
-		}
-		if err := l.setField(field, flagName, actualFlags, dupls); err != nil {
-			return err
-		}
-	}
-	return l.postFlagCheck(actualFlags, dupls)
-}
+func (l *Loader) loadFlags() error { _ = "STUB: not implemented"; return nil }
 
 func (l *Loader) postFlagCheck(values map[string]any, dupls map[string]struct{}) error {
-	if l.config.AllowUnknownFlags || l.config.FlagPrefix == "" {
-		return nil
-	}
-	for name := range dupls {
-		delete(values, name)
-	}
-	for flag := range values {
-		if strings.HasPrefix(flag, l.config.FlagPrefix) {
-			return fmt.Errorf("unknown flag %s (see AllowUnknownFlags config param)", flag)
-		}
-	}
+	_ = "STUB: not implemented"
 	return nil
 }
 
 // TODO(cristaloleg): revisit.
 func (l *Loader) setField(field *fieldData, name string, values map[string]any, dupls map[string]struct{}) error {
-	if !l.config.AllowDuplicates {
-		if _, ok := dupls[name]; ok {
-			return fmt.Errorf("field %q is duplicated", name)
-		}
-		dupls[name] = struct{}{}
-	}
-
-	val, ok := values[name]
-	if !ok {
-		return nil
-	}
-
-	if err := l.setFieldData(field, val); err != nil {
-		return err
-	}
-
-	field.isSet = true
-	if !l.config.AllowDuplicates {
-		delete(values, name)
-	}
+	_ = "STUB: not implemented"
 	return nil
 }
